@@ -8,7 +8,7 @@
 1. about.html: the about page [please note that this page will only work if you are running the site on localhost]
 2. about.md: text data to display on about.html
 3. aStar_planner.js: ignore
-4. file_renamer: ignore
+4. file_renamer.py: ignore
 5. index.html: website landing page
 6. photography.html: photography page
 7. projects.html: projects page
