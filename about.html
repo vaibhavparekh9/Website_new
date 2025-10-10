@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>About Me</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@600&display=swap" rel="stylesheet">
+
+  <!-- Shared menu + static grid -->
+  <script src="shared-bg.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* Hero text (already has base styling in shared-bg.js, you can tweak here) */
+    .page-hero{
+      position: absolute;
+      top:65px;
+      left:47%;
+      transform:translateX(-50%);
+      text-align:center;
+      z-index:2;
+    }
+
+    /* Main content area */
+    .about-wrap{
+      position:relative;
+      z-index:2;
+      margin:100px 0 80px;
+      padding-left:16px;   /* fallback before JS aligns */
+      padding-right:16px;
+      font-family:'Ubuntu Mono', monospace;
+      line-height:1.6;
+      color:#000;
+    }
+
+    .about-wrap h2{
+      font-weight:700;
+      margin-top:40px;
+    }
+
+    .about-wrap p{
+      margin-top:10px;
+      opacity:0.9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Menu (injected & highlights “About”) -->
+  <script>
+    sharedBG.injectMenu("about");
+  </script>
+
+  <!-- Hero -->
+  <header class="page-hero">
+    <h1>About Me<span class="caret"></span></h1>
+  </header>
+
+  <!-- Content -->
+  <section class="about-wrap" id="about-content">
+    <!-- Markdown content from about.md will be loaded here -->
+  </section>
+
+  <!-- Init shared background + alignment -->
+  <script>
+    sharedBG.drawStaticGrid();
+    sharedBG.alignWrapperToMenu('.about-wrap');
+    window.addEventListener('resize', () => sharedBG.alignWrapperToMenu('.about-wrap'));
+  </script>
+
+  <script>
+    (function () {
+      const target = document.getElementById('about-content');
+
+      // 1) verify marked.js is available
+      if (typeof marked === 'undefined') {
+        console.error('marked.js not loaded. Check CDN/network.');
+        target.textContent = 'Unable to load About content (markdown parser missing).';
+        return;
+      }
+
+      // 2) try .md, then .txt fallback (helpful while testing)
+      const tryPaths = ['about.md', 'about_me.md', 'about.txt'];
+
+      // helper: fetch with good diagnostics
+      function fetchText(url) {
+        // show the resolved URL you’re actually requesting
+        console.log('Fetching:', new URL(url, location.href).href);
+        return fetch(url, { cache: 'no-store' }).then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+          return res.text();
+        });
+      }
+
+      (async () => {
+        let loaded = false, lastErr = null;
+        for (const p of tryPaths) {
+          try {
+            const md = await fetchText(p);
+            target.innerHTML = marked.parse(md);
+            loaded = true;
+            break;
+          } catch (e) {
+            lastErr = e;
+            console.warn('Failed to load', p, e);
+          }
+        }
+        if (!loaded) {
+          target.textContent = 'Unable to load About content.';
+          console.error('All attempts failed.', lastErr);
+          // Extra clarity when opened as file:// (CORS)
+          if (location.protocol === 'file:') {
+            console.warn('You are opening this file via file:// which blocks fetch(). Run a local server (e.g., "python -m http.server").');
+          }
+        }
+      })();
+    })();
+  </script>
+
+</body>
+</html>

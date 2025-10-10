@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Grid Overlay</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background: white; /* or any background you like */
+    }
+    canvas {
+      display: block;
+      pointer-events: none;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+Pro&display=swap');
+
+    .intro-text {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Ubuntu Mono', monospace;
+      text-align: center;
+      color: black;
+      z-index: 10; /* ensures it sits above the canvas */
+      max-width: 80%;
+      line-height: 1.6;
+      word-wrap: normal;
+      white-space: nowrap; /* prevents breaking into multiple lines */
+    }
+
+    .menu {
+      position: absolute;
+      top: 18%;             /* distance from top of screen — tweak this */
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 250px;           /* equal spacing between items — tweak this */
+      font-family: 'Ubuntu Mono', monospace;
+      font-size: 1.4rem;
+      color: black;
+      z-index: 11;         /* above canvas */
+    }
+
+    .menu a {
+      text-decoration: none; /* remove underline */
+      color: black;          /* link color */
+      transition: color 0.2s ease;
+    }
+
+    .menu a:hover {
+      color: #C41230;        /* CMU red on hover */
+    }
+
+    .intro-text .cmu {
+      font-family: 'Source Serif Pro', serif;
+      color: #C41230;
+      font-weight: 600; /* regular */
+    }
+
+    .intro-text h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .intro-text .thin {
+      font-weight: 300; /* thinner */
+    }
+
+    .intro-text .bold-name {
+      font-weight: 700; /* bold */
+    }
+
+    .intro-text p {
+      font-size: 1.3rem;
+    }
+
+    .caret {
+      display: inline-block;
+      width: 5px;              /* thin vertical bar */
+      height: 1.1em;           /* matches text height */
+      background-color: black; /* caret color */
+      margin-left: 2px;
+      animation: blink 1s step-start infinite;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .locations_cuc-img {
+      position: absolute;
+      top: -3px;   /* distance from top */
+      left: 183px;  /* distance from left */
+      width: 150px; /* control size as needed */
+      height: auto;
+      z-index: 20; /* make sure it’s above canvas */
+      cursor: pointer;
+    }
+
+    .locations_hammerschlag-img {
+      position: absolute;
+      top: 0;   /* distance from top */
+      left: 510px;  /* distance from left */
+      width: 110px; /* control size as needed */
+      height: auto;
+      /* z-index: 20; make sure it’s above canvas */
+      cursor: pointer;
+    }
+
+    .locations_scaife-img {
+      position: absolute;
+      top: -3px;   /* distance from top */
+      left: 1100px;  /* distance from left */
+      width: 150px; /* control size as needed */
+      height: auto;
+      z-index: 20; /* make sure it’s above canvas */
+      cursor: pointer;
+    }
+
+    .locations_cathedral-img {
+      position: absolute;
+      top: -3px;   /* distance from top */
+      left: 1300px;  /* distance from left */
+      width: 150px; /* control size as needed */
+      height: auto;
+      z-index: 20; /* make sure it’s above canvas */
+      cursor: pointer;
+    }
+
+    .loc-img {
+      position: absolute;
+      top: 0;           /* JS will set exact top */
+      left: 0;          /* JS will set exact left */
+      height: auto;
+      z-index: 20;      /* above canvas and grid */
+      cursor: pointer; /* makes them clickable */
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="menu">
+    <a id="nav-about"       href="about.html"       data-target="about.html">About</a>
+    <a id="nav-resume"      href="resume.html"      data-target="resume.html">Resume</a>
+    <a id="nav-projects"    href="projects.html"    data-target="projects.html">Projects</a>
+    <a id="nav-photography" href="photography.html" data-target="photography.html">Photography</a>
+  </div>
+
+  <img src="locations/cuc.png"        alt="CUC"         class="loc-img"
+      data-target="#nav-about"       data-top="-3"   data-width="150">
+  <img src="locations/hammerschlag.png" alt="Hammerschlag" class="loc-img"
+      data-target="#nav-resume"      data-top="21"   data-width="110">
+  <img src="locations/scaife.png"     alt="Scaife"     class="loc-img"
+      data-target="#nav-projects"    data-top="24"   data-width="112">
+  <img src="locations/cathedral.png"  alt="Cathedral"  class="loc-img"
+      data-target="#nav-photography" data-top="23"   data-width="100">
+
+  <div class="intro-text">
+    <h1>
+      <span class="thin">Hi there, I am</span>
+      <span class="bold-name">Vaibhav Parekh</span>
+      <span class="thin">!</span>
+    </h1>
+    <p>
+      I am a Master’s student at <span class="cmu">Carnegie Mellon University</span>, and I <strong>BUILD ROBOTS</strong>.<br>
+      I research at <span class="cmu">CERLAB</span> (Computational Engineering and Robotics Laboratory).<br>
+      Little photography and loads (miles) of driving is how I spend my free time<span class="caret"></span>
+    </p>
+    <!-- <p>You can find out more about me here 🔗 </p> -->
+  </div>
+
+  <canvas id="grid"></canvas>
+
+  <script>
+    const canvas = document.getElementById("grid");
+    const ctx = canvas.getContext("2d");
+
+    // --- GLOBALS used by aStar_planner.js ---
+    let gridCols = 100;
+    let gridRows = 0;     // set on resize
+    let cellSize = 0;     // set on resize
+
+    // Scotty (dog) sprite
+    const scotty = new Image();
+    scotty.src = "scotty.png";
+
+    // dog occupies this many squares per side
+    const DOG_SIZE_SQUARES = 3;
+
+    // dog grid position (cell of its top-left corner)
+    let dog_x = 10; // squares from left (matches your previous offsetLeft)
+    let dog_y = 0;  // set on resize to be DOG_SIZE_SQUARES above bottom
+
+    scotty.onload = function () {
+      resizeCanvas();
+    };
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      cellSize = canvas.width / gridCols;
+      gridRows = Math.floor(canvas.height / cellSize);
+
+      // place dog DOG_SIZE_SQUARES above "offsetBottom=5"
+      const offsetBottom = 5;
+      dog_y = gridRows - (offsetBottom + DOG_SIZE_SQUARES);
+
+      drawScene();
+    }
+
+    function drawGridLines() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "#DBD5D5";
+      ctx.lineWidth = 1;
+
+      // verticals
+      for (let i = 0; i <= gridCols; i++) {
+        const x = i * cellSize;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      // horizontals
+      for (let j = 0; j <= gridRows; j++) {
+        const y = j * cellSize;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawDog(gx = dog_x, gy = dog_y) {
+      const px = gx * cellSize;
+      const py = gy * cellSize;
+      const size = DOG_SIZE_SQUARES * cellSize;
+      ctx.drawImage(scotty, px, py, size, size);
+    }
+
+    // helper to redraw everything (grid + dog)
+    function drawScene() {
+      drawGridLines();
+      drawDog();
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    // expose what the planner needs
+    window.drawGridLines = drawGridLines;
+    window.drawDog = drawDog;
+    window.drawScene = drawScene;
+    window.DOG_SIZE_SQUARES = DOG_SIZE_SQUARES;
+    window.gridCols = gridCols;
+    window.gridRows = gridRows;
+    window.cellSizeGetter = () => cellSize; // safe getter since we reassign cellSize
+    Object.defineProperty(window, 'dog_x', { get: () => dog_x, set: v => { dog_x = v; }});
+    Object.defineProperty(window, 'dog_y', { get: () => dog_y, set: v => { dog_y = v; }});
+
+
+    function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+    function positionLandmarkImages() {
+      const imgs = document.querySelectorAll('.loc-img');
+
+      imgs.forEach(img => {
+        const sel = img.dataset.target;
+        const topPx = parseFloat(img.dataset.top || "0");
+        const wPx   = parseFloat(img.dataset.width || "150");
+        const link  = document.querySelector(sel);
+
+        if (!link) return;
+
+        // Apply width first so offsetWidth is correct
+        img.style.width = wPx + "px";
+
+        const rect = link.getBoundingClientRect();
+        // Get page-relative left by adding current scrollX
+        const centerX = rect.left + rect.width / 2 + window.scrollX;
+
+        // Compute desired left so image is centered over link
+        let left = centerX - (img.offsetWidth / 2);
+
+        // Clamp to viewport so it doesn't go off-screen
+        left = clamp(left, 0 + window.scrollX, (window.scrollX + window.innerWidth) - img.offsetWidth);
+
+        // Top is relative to page top; add scrollY so it anchors to visual top
+        const top = topPx + window.scrollY;
+
+        img.style.left = Math.round(left) + "px";
+        img.style.top  = Math.round(top)  + "px";
+      });
+    }
+
+    // Reposition on load, resize, and when fonts finish (links can reflow)
+    function onReady() {
+      const imgs = document.querySelectorAll('.loc-img');
+      let pending = imgs.length;
+
+      // Wait for each image to have dimensions (if not yet loaded)
+      imgs.forEach(img => {
+        if (img.complete) {
+          if (--pending === 0) positionLandmarkImages();
+        } else {
+          img.addEventListener('load', () => {
+            if (--pending === 0) positionLandmarkImages();
+          }, { once: true });
+          img.addEventListener('error', () => {
+            if (--pending === 0) positionLandmarkImages();
+          }, { once: true });
+        }
+      });
+
+      if (pending === 0) positionLandmarkImages();
+    }
+
+    window.addEventListener('load', onReady);
+    window.addEventListener('resize', positionLandmarkImages);
+
+  </script>
+
+  <script>
+    // helper: center pixel of a grid cell
+    function cellCenterPx(cx, cy) {
+      return {
+        x: (cx + 0.5) * cellSize,
+        y: (cy + 0.5) * cellSize
+      };
+    }
+
+    // === PATH ANIMATION CONFIG ===
+    let PATH_SPEED_CELLS_PER_SEC = 250;  // <- EDIT THIS to change speed (cells per second)
+    const PATH_COLOR = "#C41230";
+    const PATH_LINE_WIDTH = 3;
+
+    // Draw a partial polyline given progress in pixels
+    function drawPathProgress(cells, progressPx) {
+      if (!cells || cells.length < 2) return;
+
+      // convert cells to pixel centers
+      const pts = cells.map(c => cellCenterPx(c.x, c.y));
+
+      // each segment length (4-connected) = cellSize
+      const segLen = cellSize;
+      const totalSegs = pts.length - 1;
+      const totalLenPx = totalSegs * segLen;
+
+      const clampedProgress = Math.max(0, Math.min(progressPx, totalLenPx));
+
+      // how many full segments + partial leftover
+      const fullSegs = Math.floor(clampedProgress / segLen);
+      const leftover = clampedProgress - fullSegs * segLen;
+
+      ctx.strokeStyle = PATH_COLOR;
+      ctx.lineWidth = PATH_LINE_WIDTH;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+
+      ctx.beginPath();
+      // start at first point
+      ctx.moveTo(pts[0].x, pts[0].y);
+
+      // draw all fully-complete segments
+      for (let i = 0; i < fullSegs; i++) {
+        ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
+      }
+
+      // draw partial segment (if any)
+      if (fullSegs < totalSegs && leftover > 0) {
+        const a = pts[fullSegs];
+        const b = pts[fullSegs + 1];
+        // interpolate along axis (horizontal or vertical only)
+        let px = a.x, py = a.y;
+        if (a.x === b.x) {
+          // vertical
+          const dir = Math.sign(b.y - a.y);
+          py = a.y + dir * leftover;
+        } else {
+          // horizontal
+          const dir = Math.sign(b.x - a.x);
+          px = a.x + dir * leftover;
+        }
+        ctx.lineTo(px, py);
+      }
+
+      ctx.stroke();
+    }
+
+    // Animate drawing from start to end
+    function animatePath(cells, onDone) {
+      if (!cells || cells.length < 2) {
+        // nothing to animate
+        drawScene();
+        if (cells && cells.length === 1) {
+          const p = cellCenterPx(cells[0].x, cells[0].y);
+          ctx.fillStyle = PATH_COLOR;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (onDone) onDone();
+        return;
+      }
+
+      const pxPerSec = PATH_SPEED_CELLS_PER_SEC * cellSize;
+      const totalLenPx = (cells.length - 1) * cellSize;
+
+      let startTs = null;
+
+      function frame(ts) {
+        if (startTs === null) startTs = ts;
+        const elapsed = (ts - startTs) / 1000; // seconds
+        const progressPx = Math.min(totalLenPx, elapsed * pxPerSec);
+
+        // redraw base, then the partial path
+        drawScene();
+        drawPathProgress(cells, progressPx);
+
+        if (progressPx < totalLenPx) {
+          requestAnimationFrame(frame);
+        } else {
+          if (onDone) onDone();
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    // get obstacle bounding box in grid cells
+    function getIntroObstacleCells() {
+      const introEl = document.querySelector(".intro-text");
+      const rect = introEl.getBoundingClientRect();
+
+      const leftCell   = Math.floor(rect.left / cellSize);
+      const rightCell  = Math.floor(rect.right / cellSize);
+      const topCell    = Math.floor(rect.top / cellSize);
+      const bottomCell = Math.floor(rect.bottom / cellSize);
+
+      return { leftCell, rightCell, topCell, bottomCell };
+    }
+
+    // BFS pathfinding with obstacle avoidance
+    function bfsPath(sx, sy, tx, ty, obstacle) {
+      const queue = [{ x: sx, y: sy }];
+      const visited = new Set([sx + "," + sy]);
+      const parent = {};
+
+      const dirs = [
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 0, dy: -1 },
+      ];
+
+      function isBlocked(x, y) {
+        return (
+          x >= obstacle.leftCell &&
+          x <= obstacle.rightCell &&
+          y >= obstacle.topCell &&
+          y <= obstacle.bottomCell
+        );
+      }
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (current.x === tx && current.y === ty) {
+          // reconstruct path
+          const path = [];
+          let node = current;
+          while (node) {
+            path.push(node);
+            node = parent[node.x + "," + node.y];
+          }
+          return path.reverse();
+        }
+
+        for (const d of dirs) {
+          const nx = current.x + d.dx;
+          const ny = current.y + d.dy;
+          const key = nx + "," + ny;
+          if (
+            nx >= 0 &&
+            nx < gridCols &&
+            ny >= 0 &&
+            ny < gridRows &&
+            !visited.has(key) &&
+            !isBlocked(nx, ny)
+          ) {
+            visited.add(key);
+            parent[key] = current;
+            queue.push({ x: nx, y: ny });
+          }
+        }
+      }
+      return [];
+    }
+
+    // build a 4-connected (orthogonal) polyline from (sx,sy) to (tx,ty)
+    // we’ll go horizontal first, then vertical (you can flip order if you prefer)
+    function buildManhattanCells(sx, sy, tx, ty) {
+      const cells = [];
+      // horizontal run
+      const hxStep = sx <= tx ? 1 : -1;
+      for (let x = sx; x !== tx; x += hxStep) cells.push({ x, y: sy });
+      cells.push({ x: tx, y: sy });
+      // vertical run
+      const vyStep = sy <= ty ? 1 : -1;
+      for (let y = sy; y !== ty; y += vyStep) cells.push({ x: tx, y });
+      cells.push({ x: tx, y: ty });
+      return cells;
+    }
+
+    // draw a static 4-connected path in CMU red from dog center cell to link center cell
+
+    function drawGridPathToLink(linkEl) {
+      const rect = linkEl.getBoundingClientRect();
+      const targetCellX = Math.floor((rect.left + rect.width / 2) / cellSize);
+      const targetCellY = Math.floor((rect.top + rect.height / 2) / cellSize);
+
+      // start from the dog's anchor cell (2,4) from top-left of Scotty
+      const startCellX = dog_x + Math.floor(DOG_SIZE_SQUARES / 2) + 2;
+      const startCellY = dog_y + Math.floor(DOG_SIZE_SQUARES / 2);
+
+      const obstacle = getIntroObstacleCells();
+      const cells = bfsPath(startCellX, startCellY, targetCellX, targetCellY, obstacle);
+
+      // animate drawing from Scotty toward the menu word
+      animatePath(cells);
+    }
+
+
+    // intercept menu clicks: just draw the path (no navigation yet)
+    document.querySelectorAll(".menu a").forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        drawGridPathToLink(e.currentTarget);
+        // To clear the path later, call drawScene();
+      });
+    });
+
+    document.querySelectorAll(".loc-img")
+    .forEach(img => {
+      img.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetSel = img.dataset.target;                 // e.g., "#nav-about"
+        const linkEl = targetSel ? document.querySelector(targetSel) : null;
+        if (!linkEl) return;
+        drawGridPathToLink(linkEl);
+      });
+    });
+  </script>
+
+</body>
+</html>

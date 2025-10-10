@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Photography</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:wght@600&display=swap" rel="stylesheet">
+
+  <script src="shared-bg.js"></script>
+
+  <style>
+    /* Page heading */
+    .page-hero{
+      position: absolute;
+      top: 65px;
+      left: 47%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index:2;
+    }
+    .page-hero h1{
+      margin:0 0 6px; font-size:2.8rem; font-weight:700;
+    }
+    .page-hero p{
+      margin:0; font-size:1.05rem; opacity:.8;
+    }
+
+    .caret{
+      display:inline-block; width:5px; height:1.1em;
+      background:var(--ink); margin-left:4px;
+      animation:blink 1s step-start infinite; vertical-align:text-bottom;
+    }
+    @keyframes blink{ 50%{opacity:0} }
+
+    @media (max-width:900px){
+      .menu{ gap:48px; }
+    }
+
+    /* container aligned same as projects-wrap */
+    .photos-wrap {
+    position: relative;
+    z-index: 2;
+    margin: 90px 0 80px;
+    padding-left: 16px;   /* fallback before JS runs */
+    padding-right: 16px;  /* fallback before JS runs */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* distance between photos */
+    }
+
+    /* each photo scales to container width */
+    .photo-item {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;  /* ensures no stretching */
+    }
+
+    /* Overlay background */
+    .carousel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.8); /* semi-white */
+      backdrop-filter: blur(10px);
+      display: none; /* hidden by default */
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .carousel-content {
+      position: relative;
+      width: auto;             /* let height drive size */
+      height: 90vh;            /* nearly full height */
+      aspect-ratio: 9 / 16;    /* portrait frame */
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Slides container takes full box */
+    .carousel-slides {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s ease;
+    }
+
+    /* Each image keeps portrait ratio and fills */
+    .carousel-slides img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;    /* crop to fill like stories */
+    }
+
+    /* Controls */
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: black;
+      background: none;
+      border: none;
+      font-size: 2.5rem;
+      cursor: pointer;
+      padding: 8px 14px;
+      z-index: 1200;
+      transition: background 0.2s ease;
+    }
+
+    .carousel-arrow.left {left: 530px}
+
+    .carousel-arrow.right {right: 530px}
+
+    /* Close button */
+    .carousel-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      /* background: rgba(0,0,0,0.6); */
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.8rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    .carousel-close:hover {
+      background: rgba(0,0,0,0.8);
+    }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+
+    .carousel-counter {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      /* background: rgba(0,0,0,0.6); */
+      background: none;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      z-index: 10;
+      font-family: 'Ubuntu Mono', monospace;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Menu -->
+  <script>
+    sharedBG.injectMenu("photography");
+  </script>
+
+  <!-- Hero -->
+  <header class="page-hero">
+    <h1>Photography<span class="caret"></span></h1>
+  </header>
+
+  <section class="photos-wrap">
+    <img src="photography_page_images/nyc_wall.jpg" alt="NYC Wall" class="photo-item">
+    <img src="photography_page_images/pittsburgh_wall.jpg" alt="Pittsburgh Wall" class="photo-item">
+    <img src="photography_page_images/udaipur_wall.jpg" alt="Udaipur Wall" class="photo-item">
+  </section>
+
+  <!-- Carousel Overlay -->
+  <div id="carousel-overlay" class="carousel-overlay">
+    <!-- left/right arrows in overlay -->
+    <button id="prev" class="carousel-arrow left">&#10094;</button>
+    <button id="next" class="carousel-arrow right">&#10095;</button>
+    <div class="carousel-content">
+      <button class="carousel-close">&times;</button>
+      <div class="carousel-counter"></div>
+      <div class="carousel-slides"></div>
+    </div>
+  </div>
+
+  <!-- this script is to keep spanning photos between 'Home' and 'Photography' menu items -->
+  <script>
+    sharedBG.drawStaticGrid();
+    sharedBG.alignWrapperToMenu('.photos-wrap');
+    window.addEventListener('resize', () => sharedBG.alignWrapperToMenu('.photos-wrap'));
+  </script>
+
+  <script>
+    const overlay = document.getElementById('carousel-overlay');
+    const slidesContainer = overlay.querySelector('.carousel-slides');
+    const closeBtn = overlay.querySelector('.carousel-close');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const counter = overlay.querySelector('.carousel-counter');
+
+    const galleries = {
+      nyc: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30'],
+      pittsburgh: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20'],
+      udaipur: ['1','2','3','4','5','6','7'],
+    };
+
+    function openCarousel(name) {
+      slidesContainer.innerHTML = '';
+      images = galleries[name].map(file => {
+        const img = document.createElement('img');
+        img.src = `photography_page_images/${name}/${file}.jpg`;
+        slidesContainer.appendChild(img);
+        return img;
+      });
+      currentIndex = 0;
+      updateCarousel();
+      overlay.style.display = 'flex';
+    }
+
+    // controls
+    prevBtn.addEventListener('click', () => {
+      currentIndex = (currentIndex - 1 + images.length) % images.length;
+      updateCarousel();
+    });
+    nextBtn.addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % images.length;
+      updateCarousel();
+    });
+
+    closeBtn.addEventListener('click', () => {
+      overlay.style.display = 'none';
+    });
+
+    function updateCarousel() {
+      const offset = -currentIndex * 100;
+      slidesContainer.style.transform = `translateX(${offset}%)`;
+      counter.textContent = `${currentIndex + 1} / ${images.length}`;
+    }
+
+    // hook up main thumbnails
+    document.querySelector('img[alt="NYC Wall"]').addEventListener('click', () => {
+      openCarousel('nyc');
+    });
+    document.querySelector('img[alt="Pittsburgh Wall"]').addEventListener('click', () => {
+      openCarousel('pittsburgh');
+    });
+    document.querySelector('img[alt="Udaipur Wall"]').addEventListener('click', () => {
+      openCarousel('udaipur');
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) { // only if you clicked outside carousel-content
+        overlay.style.display = 'none';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (overlay.style.display !== 'flex') return;
+      if (e.key === 'Escape') overlay.style.display = 'none';
+      if (e.key === 'ArrowLeft')  prevBtn.click();
+      if (e.key === 'ArrowRight') nextBtn.click();
+    });
+
+  </script>
+
+</body>
+</html>
