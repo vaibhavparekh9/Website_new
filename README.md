@@ -5,7 +5,7 @@
 4. resume: contains my resume pdf [this opens as a new tab on the website]
 
 ## Files structure:
-1. '''about.html''': the about page [please note that this page will only work if you are running the site on localhost]
+1. ```about.html```: the about page [please note that this page will only work if you are running the site on localhost]
 2. about.md: text data to display on about.html
 3. aStar_planner.js: ignore
 4. file_renamer.py: ignore
