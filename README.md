@@ -6,9 +6,9 @@
 
 ## Files structure:
 1. ```about.html```: the about page [please note that this page will only work if you are running the site on localhost]
-cd Website_new/ 
-python -m http.server 8000
-then open: http://localhost:8000/about.html
+cd Website_new/ <br>
+python -m http.server 8000 <br>
+then open: http://localhost:8000/about.html <br>
 2. ```about.md```: text data to display on about.html
 3. ```aStar_planner.js```: ignore
 4. ```file_renamer.py```: ignore
