@@ -5,7 +5,7 @@
 4. resume: contains my resume pdf [this opens as a new tab on the website]
 
 ## Files structure:
-1. ```about.html```: the about page [please note that this page will only work if you are running the site on localhost]
+1. ```about.html```: the about page [please note that this page will only work if you are running the site on localhost] <br>
 cd Website_new/ <br>
 python -m http.server 8000 <br>
 then open: http://localhost:8000/about.html <br>
